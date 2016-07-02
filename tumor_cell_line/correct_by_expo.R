@@ -1,4 +1,7 @@
-#expO used for random ; use to assess significant from wilcox.test
+#scripts used to correct signficance between tumors and cell lines. Random samples were taken from expO 
+# the cutoff may be slightly different due to the random sampling.
+
+library(GEOquery)
 
 is_outlier <- function(cancer, cell_line_one_tumor_anno){
   #compute correlation between tumors and dz related cell line as well as other cell lines
@@ -10,12 +13,11 @@ is_outlier <- function(cancer, cell_line_one_tumor_anno){
   return(p$p.value)
 }
 
-library(GEOquery)
 
-raw_matrix <- read.csv("expo/GSE2109_series_matrix_cleaned.txt", sep="\t")
+raw_matrix <- read.csv("raw/expo/GSE2109_series_matrix_cleaned.txt", sep="\t")
 raw_matrix <- raw_matrix[, c(1,sample(2:ncol(raw_matrix), 1000))] #random take 1000 tumors
 
-gpl <- getGEO(filename=("expo/GPL570.soft"))
+gpl <- getGEO(filename=("raw/expo/GPL570.soft"))
 geneMappings <- Table(gpl)[,c("ENTREZ_GENE_ID","ID")]
 names(geneMappings) <- c("GeneID","ID")
 gpl <- geneMappings[!duplicated(geneMappings$ID),]
@@ -23,8 +25,6 @@ gpl <- geneMappings[!duplicated(geneMappings$ID),]
 merge_matrix = merge(gpl, raw_matrix, by.x="ID", by.y="ID_REF")
 merge_matrix = merge_matrix[,-c(1)]
 merge_matrix = aggregate(. ~ GeneID, merge_matrix, mean)
-
-num_varying_genes = 5000
 
 
 load("ccle_meta_updated.RData")
@@ -57,3 +57,4 @@ for (cancer in cancers){
 
 #cutoff used
 cutoff = cutoffs[1]
+cutoff

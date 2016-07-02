@@ -7,13 +7,11 @@ library(DESeq)
 library("RMySQL")
 library("ROCR")
 library("beanplot")
-mysql_drvr <-dbDriver("MySQL")
-#con <- dbConnect(mysql_drvr,group="client",host="buttelab-db1.stanford.edu",dbname="proj_lincs")
-
+library(sparcl)
 
 ########
 #functions
-
+########
 is_outlier <- function(cancer, cell_line_one_tumor_anno){
   #compute correlation between tumors and dz related cell line as well as other cell lines
   ccle_tcga = read.csv("ccle_cellline_tcga_mapping_updated.csv", stringsAsFactors=F)
@@ -107,16 +105,20 @@ get.top.cor.tumor.type <- function(tumor_cell_all_outliers_sample, sample1){
 }
 
 
+############################
+#MAIN
+###########################
+###########################
+
 ###########
 ##process RNASEQ from TCGA
 #quality control
 #cross validation; validate with independent sets
 
-
 if (data_from_gdac){
-  raw.data.header = read.csv(paste('firehose/gdac.broadinstitute.org_', cancer, '.Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.Level_3.2014051800.0.0/', cancer, '.rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.data.txt', sep=""), sep='\t', nrow=1, check.names=F)
+  raw.data.header = read.csv(paste('raw/gdac/rnaseq/gdac.broadinstitute.org_', cancer, '.Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.Level_3.2014051800.0.0/', cancer, '.rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.data.txt', sep=""), sep='\t', nrow=1, check.names=F)
   
-  raw.data = read.csv(paste('firehose/gdac.broadinstitute.org_', cancer, '.Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.Level_3.2014051800.0.0/', cancer, '.rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.data.txt', sep=""), sep='\t', skip=1, check.names=F)
+  raw.data = read.csv(paste('raw/gdac/rnaseq/gdac.broadinstitute.org_', cancer, '.Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.Level_3.2014051800.0.0/', cancer, '.rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.data.txt', sep=""), sep='\t', skip=1, check.names=F)
   genes = as.character(raw.data[,1])
   GeneID = sapply(genes, function(id){
     as.character(unlist(strsplit(id, "\\|"))[2])
@@ -238,11 +240,12 @@ if (!file.exists(paste(cancer, "/tumor_cell_line/", comparison_gene_set, "/", se
 write.csv(tumor_cell_all, paste(cancer, "/tumor_cell_line/", comparison_gene_set, "/", "tumor_cell_all", cancer, ".csv", sep=""))
 
 ###
-#detect outliers
+#detect tumor samples that are not correlated to cancer cell lines
 tumor_cell_all_p = aggregate(outlier ~ patient_id + sample_id, tumor_cell_all, min)
 tumor_cell_all_p_adj = p.adjust(tumor_cell_all_p$outlier, "fdr")
-patient_outliers =  unique(tumor_cell_all_p$patient_id[tumor_cell_all_p_adj > cutoff])
-sample_outliers =  unique(tumor_cell_all_p$sample_id[tumor_cell_all_p_adj > cutoff])
+#cutoff: by default 0.05; could use the cutoff by randomly sampling; if so, I think we don't need to adjust p value
+patient_outliers =  unique(tumor_cell_all_p$patient_id[tumor_cell_all_p$outlier > cutoff])
+sample_outliers =  unique(tumor_cell_all_p$sample_id[tumor_cell_all_p$outlier > cutoff])
 
 write(patient_outliers, paste(cancer,"/tumor_cell_line/", comparison_gene_set, "/", "outlier_", cancer, "_outlier.txt", sep=""), ncolumn=1)
 
@@ -262,12 +265,12 @@ tumor_cell_all$histology_class <-  histology_class
 
 tumor_cell_all_outliers = tumor_cell_all[ as.character(tumor_cell_all$sample_id) %in% sample(as.character(sample_outliers), min(10, length(sample_outliers))),]
 bean.plot(tumor_cell_all_outliers, cancer, "bad")
-box.plot(tumor_cell_all_outliers, cancer, "bad")
+#box.plot(tumor_cell_all_outliers, cancer, "bad")
 
 good_samples = sample(unique(tumor_cell_all$sample_id[tumor_cell_all$outlier < cutoff]), min(10, length(unique(tumor_cell_all$sample_id[tumor_cell_all$outlier < cutoff]))))
 tumor_cell_all_good = tumor_cell_all[ as.character(tumor_cell_all$sample_id) %in% as.character(good_samples),]
 bean.plot(tumor_cell_all_good, cancer, "good")
-box.plot(tumor_cell_all_good, cancer, "good")
+#box.plot(tumor_cell_all_good, cancer, "good")
 
 #find top 5 enriched cell type
 tumor_cell_mapping = read.csv("ccle_cellline_tcga_mapping_updated.csv")
@@ -289,14 +292,14 @@ for(sample1 in samples){
 ############
 #clinical features
 #use raw count instead of scaled estimate, 
-raw.data.header = read.csv(paste('firehose/gdac.broadinstitute.org_', cancer, '.Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.Level_3.2014051800.0.0/', cancer, '.rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.data.txt', sep=""), sep='\t', nrow=1, check.names=F)
+raw.data.header = read.csv(paste('raw/gdac/rnaseq/gdac.broadinstitute.org_', cancer, '.Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.Level_3.2014051800.0.0/', cancer, '.rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes__data.data.txt', sep=""), sep='\t', nrow=1, check.names=F)
 
 countTable = raw.data[,colnames(raw.data) == 'raw_count']
 raw.data.header = colnames(raw.data.header)[colnames(raw.data) == 'raw_count']
 colnames(countTable) = raw.data.header 
 rownames(countTable) = GeneID
 
-meta_file = list.files(paste("mrna/",cancer,"/METADATA/UNC__IlluminaHiSeq_RNASeqV2//", sep=''), 'sdrf', full.names=T)[1]
+meta_file = list.files(paste("raw/gdac/rnaseq/METADATA/UNC__IlluminaHiSeq_RNASeqV2//", sep=''), 'sdrf', full.names=T)[1]
 tcga_meta = read.csv(meta_file, sep="\t", stringsAsFactors=F)
 
 tcga_meta = subset(tcga_meta, Protocol.REF.4 == "unc.edu:RSEM_genes:IlluminaHiSeq_RNASeqV2:2" | Protocol.REF.4 == "unc.edu:RSEM_genes:IlluminaHiSeq_RNASeqV2:3")
@@ -335,14 +338,16 @@ if (length(invalid_files) > 0){
 }else{
   countTable = countTable[, as.character(tcga_meta$Comment..TCGA.Barcode.)] #reorder sample    
 }
+save(countTable, file=paste(cancer,"/countTable.RData", sep=""))
+
 
 #tricky here... when merge, if the merged column in x is duplicated, the order in the new merged data frame will be changed
-clinical = read.csv(paste("clinical/", cancer, "/Clinical/Biotab/nationwidechildrens.org_clinical_patient_",cancer,".txt", sep=""), sep="\t", stringsAsFactors=F)
+clinical = read.csv(paste("raw/gdac/Clinical/Biotab/nationwidechildrens.org_clinical_patient_",cancer,".txt", sep=""), sep="\t", stringsAsFactors=F)
 patient_phenotype = merge(data.frame(bcr_patient_barcode=patient_id, tcga_barcode), clinical, by.x=1, by.y="bcr_patient_barcode", all.x=T, sort=F)
 rownames(patient_phenotype) = patient_phenotype$tcga_barcode
 patient_phenotype = patient_phenotype[tcga_barcode,]
 
-biospecimen = read.csv(paste("clinical/", cancer, "/Clinical/Biotab/nationwidechildrens.org_biospecimen_sample_", cancer, ".txt", sep=""), sep="\t")
+biospecimen = read.csv(paste("raw/gdac/Clinical/Biotab/nationwidechildrens.org_biospecimen_sample_", cancer, ".txt", sep=""), sep="\t")
 sample_phenotype = merge(sample_id, biospecimen, by.x=1, by.y="bcr_sample_barcode", all.x=T, sort=F)
 
 patient_phenotype$quality <- sapply(patient_id, function(id){
@@ -362,36 +367,10 @@ cdsFullBlind = estimateDispersions( cdsFull, method = "blind" )
 vsdFull = varianceStabilizingTransformation( cdsFullBlind )
 
 pdf(paste(cancer, "/tumor_cell_line/", comparison_gene_set, "/", cancer, "pca_outlier.pdf", sep=""))
-  print(plotPCA(vsdFull, intgroup=c( "type", "quality"), ntop = num_varying_genes))
+  print(plotPCA(vsdFull, intgroup=c( "type", "quality")))
 dev.off()
 
-pdf(paste(cancer, "/tumor_cell_line/", comparison_gene_set, "/",cancer, "pca.pdf", sep=""))
-  print(plotPCA(vsdFull, intgroup=c( "type"), ntop = num_varying_genes))
-dev.off()
 
-cdsFullcounts = counts(cdsFullBlind, normalized = T)
-cdsFullcounts = log(cdsFullcounts + 1)
 
-#cluster visualization
-my.cols = sapply(colnames(cdsFullcounts), function(sample_name){
-  
-  if (tumor_info[sample_name, "type"] == "tumor" &  tumor_info[sample_name, "quality"] == "outlier" ){
-    1
-  }else if (tumor_info[sample_name, "type"] == "tumor" &  tumor_info[sample_name, "quality"] != "outlier" ){
-    2
-  }else if (tumor_info[sample_name, "type"] == "non-tumor" &  tumor_info[sample_name, "quality"] == "outlier" ){
-    3
-  }else if (tumor_info[sample_name, "type"] == "non-tumor" &  tumor_info[sample_name, "quality"] != "outlier" ){
-    4
-  }else{
-    5
-  }
-})
-
-library(sparcl)
-  hc <- hclust(dist(t(cdsFullcounts)),method="complete")
-  pdf(paste(cancer, "/tumor_cell_line/",comparison_gene_set, "/",cancer, "_TCGA_cluster.pdf", sep=""))
-    ColorDendrogram(hc, y= my.cols,main="",branchlength=25)
-dev.off()
 
 

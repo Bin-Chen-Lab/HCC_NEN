@@ -158,7 +158,7 @@ if (nrow(dz_genes_down)> max_gene_size){
 print ((nrow(dz_genes_up)+nrow(dz_genes_down)))
 
 #load('/home/binchen1/scratch/geneid_processed_data_all.RData')
-load('/projects/reposition/data/geneid_processed_data_all.RData')
+load('raw/cmap/geneid_processed_data_all.RData')
 gene_list <- subset(cmap_signatures,select=1)
 cmap_signatures <- cmap_signatures[,2:ncol(cmap_signatures)] 
 N_PERMUTATIONS <- 100000 #default 100000
@@ -173,5 +173,5 @@ rand_cmap_scores <- sapply(sample(1:ncol(cmap_signatures),N_PERMUTATIONS,replace
 	cmap_score(rand_dz_gene_up,rand_dz_gene_down,cmap_exp_signature)
 },simplify=F)
 
-save(rand_cmap_scores,file=paste('',subset_comparison_id,'_',analysis_id,'_randoms.RData',sep=""))
+save(rand_cmap_scores,file=paste(subset_comparison_id, '/drug/',subset_comparison_id,'_',analysis_id,'_randoms.RData',sep=""))
 

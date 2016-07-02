@@ -1,8 +1,7 @@
 # Computes the ConnectivityMap score based on Marina's implementation of the KS-based CMap algorithm
 # $1 = subset_comparison_id, $2 = analysis_id
-library(qvalue)
+library(qvalue) #from bioconductor
 
-source("/projects/reposition/code/compute/new_set/db_conn.R")
 args <- commandArgs(trailingOnly=T)
 subset_comparison_id <- args[1]
 analysis_id <-  args[2]
@@ -163,8 +162,7 @@ if (nrow(dz_genes_down)> max_gene_size){
         dz_genes_down <- data.frame(GeneID=dz_genes_down[1:max_gene_size,])
 }
 
-#load('/home/binchen1/scratch/geneid_processed_data_all.RData')
-load('/projects/reposition/data/geneid_processed_data_all.RData')
+load('raw/cmap/geneid_processed_data_all.RData')
 gene_list <- subset(cmap_signatures,select=1)
 cmap_signatures <- cmap_signatures[,2:ncol(cmap_signatures)] # Shouldn't overwrite, but worried about memory usage
 dz_cmap_scores <- sapply(1:ncol(cmap_signatures),function(exp_id) {
@@ -176,7 +174,7 @@ dz_cmap_scores <- sapply(1:ncol(cmap_signatures),function(exp_id) {
 
 # Compute the significance
 print("Loading random scores for subset")
-load(paste('/projects/reposition/cmap_randoms/',subset_comparison_id,'_',analysis_id,'_randoms.RData',sep=""))
+load(paste(subset_comparison_id, '/drug/',subset_comparison_id,'_',analysis_id,'_randoms.RData',sep=""))
 random_scores <- unlist(rand_cmap_scores)
 # Frequency-based p-value using absolute scores from sampling distribution to approximate two-tailed p-value
 print("COMPUTING p-values")
@@ -186,8 +184,7 @@ p_values <- sapply(dz_cmap_scores,function(score) {
 print("COMPUTING q-values")
 q_values <- qvalue(p_values)$qvalues
 
-sapply(1:length(dz_cmap_scores),function(exp_id) {
-		dbSendQuery(db_con,paste("INSERT INTO proj_repositioning.cmap_predictions_temp (experiment_id,subset_comparison_id,cmap_score,p_value,q_value,analysis_id) VALUES (",exp_id,",","\"",subset_comparison_id,"\"",",",dz_cmap_scores[exp_id],",",p_values[exp_id],",",q_values[exp_id],",",analysis_id,")",sep=""))
-})
-
-#dbSendQuery(db_con,"COMMIT")
+drugs = data.frame(exp_id = seq(1:length(dz_cmap_scores)), cmap_score = dz_cmap_scores, p = p_values, q = q_values, subset_comparison_id, analysis_id
+                   )
+results = list(drugs, dz_signature)
+save(results, file=paste(subset_comparison_id, "/drug/", "cmap_predictions.RData", sep=""))
