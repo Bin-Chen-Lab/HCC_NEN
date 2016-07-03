@@ -1,9 +1,9 @@
-the pipeline used to identify drugs for liver cancer. 
+This pipeline is used to identify drugs for liver cancer. It can be easily applied to other cancers as well. 
 ![alt text][overview]
 [overview]: https://github.com/Bin-Chen-Lab/HCC_NEN/blob/master/workflow_general.png "workflow overview"
 
 
-it includes  four components below:
+The code includes  four components:
 ##tumor_cell_line:
 Correlate tumor samples and cell lines
 
