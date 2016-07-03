@@ -128,7 +128,7 @@ cancer = "LIHC"
 load('raw/cmap/cmap_signatures.RData')
 load(paste(cancer, "/drug/", "cmap_predictions.RData", sep=""))
 valid_instances = read.csv("raw/cmap/cmap_valid_instances.csv", stringsAsFactors = F)
-cmap_experiments = read.csv("raw/cmap/cmap_drug_experiments.csv", stringsAsFactors =  F)
+cmap_experiments = read.csv("raw/cmap/cmap_drug_experiments_new.csv", stringsAsFactors =  F)
 
 drug_preds = results[[1]] #from cmap_predictions.RData
 dz_signature = results[[2]]
@@ -330,7 +330,7 @@ for (i in 1:ncol(drug_dz_signature)){
   drug_dz_signature[,i] = rank(drug_dz_signature[,i])
 }
 
-re_rank_instance = 0
+re_rank_instance = 1
 if (re_rank_instance > 0){
   col_sorted = sort(cor(drug_dz_signature, method="spearman")["value",-1])    
   drug_dz_signature = drug_dz_signature[,c("value", names(col_sorted))]
