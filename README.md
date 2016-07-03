@@ -4,7 +4,7 @@ This pipeline is used to identify drugs for liver cancer. It can be easily appli
 
 
 The code includes  four components:
-##tumor_cell_line:
+##tumor_cell_line
 Correlate tumor samples and cell lines
 
 Select tumor sampels that are not correlated to cell lines
