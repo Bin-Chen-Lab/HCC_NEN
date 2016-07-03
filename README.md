@@ -1,4 +1,9 @@
-the pipeline used to identify drugs for liver cancer. It includes  four components below:
+the pipeline used to identify drugs for liver cancer. 
+![alt text][overview]
+[overview]: https://github.com/Bin-Chen-Lab/HCC_NEN/blob/master/workflow_general.png "workflow overview"
+
+
+it includes  four components below:
 ##tumor_cell_line:
 Correlate tumor samples and cell lines
 
