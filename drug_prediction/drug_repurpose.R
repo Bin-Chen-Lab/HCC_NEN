@@ -1,5 +1,5 @@
 #analyze predictions from CMap and LINCS
-
+#drugbank should be updated (the version being used was downloaded in 2013)
 ##############################
 ######
 library(pheatmap)
