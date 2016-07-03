@@ -12,68 +12,8 @@ library("plyr")
 #############################
 #functions
 ############################
-get.drug.name <- function(con, id, only_name=T, source="cmap"){
-  if ( source == "cmap"){ #indicate it is from cmap
-    id_new = strtoi(paste(unlist(strsplit(id,""))[-1], collapse="")) - 1
-    query <- paste("select * from proj_repositioning.cmap_experiments where id =", id_new )
-    rs <- dbSendQuery(con, query)        
-    drug_info <- fetch(rs, n = 1)
-    dbClearResult(rs)
-    if (only_name){
-      return(drug_info[1,"name"])
-    }else{
-      return(paste(drug_info[1,c("name","cell_line","duration","concentration")], collapse="_")) #)
-    }
-  }else{
-    query = paste("select * from proj_lincs.sig_info where id ='", id, "'", sep="")
-    rs <- dbSendQuery(con, query)        
-    drug_info <- fetch(rs, n = 1)
-    dbClearResult(rs)
-    if (only_name){
-      return(drug_info[1,"pert_iname"])
-    }else{
-      return(paste(drug_info[1,c("pert_iname","cell_id","pert_dose","pert_time")], collapse="_")) #
-    }     
-  }
-}
-
-get.landmark.info <- function(con){
-  rs <- dbSendQuery(con, "select * from proj_lincs.probe_id_info where pool_id like '%epsilon%'")    
-  probe_info <- fetch(rs, n = -1)
-  dbClearResult(rs)
-  return(probe_info)
-}
-
-get.geneid.from.synonym <- function(con, synonym){
-  rs <- dbSendQuery(con, paste("select geneid from annot_gene.gene_synonym where tax_id = 9606 and synonym = '", synonym, "'", sep=""))    
-  gene_info <- fetch(rs, n = -1)
-  dbClearResult(rs)
-  if (nrow(gene_info) > 0){
-    return (gene_info[1,1])
-  }else{
-    return (NA)
-  }
-}
-
-get.instance.sig <- function(id, con, version = "new", landmark=T){
-  
-  query <- paste("select * from proj_lincs.sig_values where id = ", id, sep="")
-  rs <- dbSendQuery(con, query)
-  result <- fetch(rs, n = -1)[1,]
-  value <- as.double(unlist(strsplit(result[1,2], ",")))
-  if (landmark == T){
-    instance.sig <- data.frame(sig_id =  id, probe_id = seq(1, 978), value[1:978])      
-  }else{
-    instance.sig <- data.frame(sig_id = id, probe_id = seq(1, length(value)), value = value)      
-  }
-  dbClearResult(rs)  
-  
-  
-  return (instance.sig)
-}
-
 createGGPlotDist <- function(currPheno, measureVar, groupVars, main="GGPLot", ylab="pass ylab value", xlab="pass xlab value") {
-  #credit from Purvesh
+  #modified from Purvesh's code
   
   temp = summarySE(currPheno, measurevar=measureVar, groupvars=groupVars)[, c(groupVars, measureVar, "se")]
   a = ggplot() +
@@ -185,18 +125,20 @@ cancer = "LIHC"
 
 #############
 ###CMAP
-load('raw/cmap/geneid_processed_data_all.RData')
+load('raw/cmap/cmap_signatures.RData')
 load(paste(cancer, "/drug/", "cmap_predictions.RData", sep=""))
 valid_instances = read.csv("raw/cmap/cmap_valid_instances.csv", stringsAsFactors = F)
 cmap_experiments = read.csv("raw/cmap/cmap_drug_experiments.csv", stringsAsFactors =  F)
 
-drug_preds = results[[1]]
+drug_preds = results[[1]] #from cmap_predictions.RData
 dz_signature = results[[2]]
 
 cmap_experiments_valid = merge(cmap_experiments, valid_instances, by="id")
-cmap_experiments_valid = cmap_experiments_valid[cmap_experiments_valid$valid == 1, ]
+#keep valid profiles; drugs (as long as matched to Drugbank)
+cmap_experiments_valid = cmap_experiments_valid[cmap_experiments_valid$valid == 1 & cmap_experiments_valid$DrugBank.ID != "NULL", ]
  
 drug_instances_all = merge(drug_preds, cmap_experiments_valid, by.x="exp_id", by.y="id")
+write.csv(drug_instances_all, paste(cancer, "/drug/cmap_drug_predictions.csv", sep=""))
 
 #sig cmap cutoff
 cutoff = max(drug_instances_all$cmap_score[drug_instances_all$q < 0.01 & drug_instances_all$cmap_score < 0])
@@ -212,7 +154,7 @@ pdf(paste(cancer, "/drug/cmap_final","_cmap_distribution.pdf", sep=""))
   createGGPlotDist(drug_instances_all, measureVar="score", groupVars = "group", main = "", ylab = "", xlab = "")
 dev.off()
 
-drug_instances = subset(drug_instances_all, q < 0.01)
+drug_instances = subset(drug_instances_all, q < 0.05)
 drug_instances = drug_instances[order(drug_instances$cmap_score), ]
 
 drug_instances_id <- drug_instances$exp_id[1:20] + 1 #the first column is the gene id
@@ -239,7 +181,6 @@ if (re_rank_instance > 0){
 }
 
 drug_names <- sapply(2:ncol(drug_dz_signature), function(id){
-  #get.drug.name(con, colnames(drug_dz_signature)[id], T)
   #need to minus 1 as in cmap_signatures, V1 is gene id.
   new_id = strtoi(paste(unlist(strsplit(as.character(colnames(drug_dz_signature)[id]),""))[-1], collapse="")) - 1 
   cmap_experiments_valid$name[cmap_experiments_valid$id == new_id]
@@ -256,22 +197,22 @@ pdf(paste(cancer, "/drug/", "cmap_predictions.pdf", sep=""))
   text(x = seq(0,1,length.out=ncol( drug_dz_signature ) ), c(-0.05),
      labels = c( "HCC",drug_names), srt = 45, pos=2,offset=0.05, xpd = TRUE, cex=1.4, col = c("red", cols))
 dev.off()
-write.csv(drug_dz_signature, paste(cancer, "/drug/drug_dz_signature.csv", sep=""))
+write.csv(drug_dz_signature, paste(cancer, "/drug/cmap_drug_dz_signature.csv", sep=""))
 
 colnames(drug_dz_signature) = c( "HCC",drug_names)
-pheatmap((drug_dz_signature), col = colPal, cluster_row = FALSE, cluster_col = F, show_rownames = F, legend=T, filename = "cmap_predictions_pheatmap.pdf")
-pheatmap(t(drug_dz_signature), col = colPal, cluster_row = FALSE, cluster_col = F, show_colnames = F, legend=F, filename = "cmap_predictions_pheatmap_reverse.pdf")
+#pheatmap((drug_dz_signature), col = colPal, cluster_row = FALSE, cluster_col = F, show_rownames = F, legend=T, filename = paste(cancer, "/drug/cmap_predictions_pheatmap.pdf", sep=""))
+pheatmap(t(drug_dz_signature), col = colPal, cluster_row = FALSE, cluster_col = F, show_colnames = F, legend=F, filename = paste(cancer, "/drug/cmap_predictions_pheatmap_reverse.pdf", sep=""))
 
 #cluster drugs 
 drug_dz_signature_cluster = drug_dz_signature[, -c(1)]
 colnames(drug_dz_signature_cluster) = drug_names
-pheatmap(drug_dz_signature_cluster, col = colPal, cluster_row = FALSE, clustering_distance_cols = "correlation", show_rownames = F, legend=F,  filename = paste(cancer, "/drug/cluster_by_drug.pdf", sep=""))
+#pheatmap(drug_dz_signature_cluster, col = colPal, cluster_row = FALSE, clustering_distance_cols = "correlation", show_rownames = F, legend=F,  filename = paste(cancer, "/drug/cluster_by_drug.pdf", sep=""))
 
 #cluster genes; require the signature includes gene symbol and gene id
 gene_annot <- subset(dz_signature, select = c("Symbol", "GeneID"))
 gene_ids_annot <- merge(gene_ids, gene_annot, by.x=1, by.y="GeneID", sort=F)
 rownames(drug_dz_signature_cluster) = gene_ids_annot$Symbol
-pheatmap(drug_dz_signature_cluster, col = colPal, cellheight = 12, clustering_distance_rows = "correlation", show_rownames = T, legend=F,  filename = paste(cancer, "/drug/cluster_by_gene.pdf", sep=""))
+#pheatmap(drug_dz_signature_cluster, col = colPal, cellheight = 12, clustering_distance_rows = "correlation", show_rownames = T, legend=F,  filename = paste(cancer, "/drug/cluster_by_gene.pdf", sep=""))
 
 #visualize reversed gene
 drug_dz_signature_reversed = (drug_dz_signature - drug_dz_signature[, 1]) #abs
@@ -281,7 +222,7 @@ gene_names = as.character(gene_ids_annot$Symbol)
 rownames(drug_dz_signature_reversed) = gene_names
 colnames(drug_dz_signature_reversed) = drug_names
 my.cols <- brewer.pal(9, "Blues")
-pheatmap(drug_dz_signature_reversed, col = my.cols , cellheight = 12,  show_rownames = T, legend=T,filename =  paste(cancer, "/drug/reversibility.pdf", sep="")) #,  
+#pheatmap(drug_dz_signature_reversed, col = my.cols , cellheight = 12,  show_rownames = T, legend=T,filename =  paste(cancer, "/drug/reversibility.pdf", sep="")) #,  
 
 #transpose, let gene in the column
 direction_matrix = drug_dz_signature - drug_dz_signature[, 1]
@@ -290,8 +231,8 @@ annotation = data.frame(type=sign(as.vector(apply(direction_matrix, 1, sum))))
 rownames(annotation) = gene_names
 annotation$type = factor(annotation$type)
 drug_dz_signature_rotate = t(drug_dz_signature_reversed)
-pheatmap(-drug_dz_signature_rotate, col = redblue(100) , cellheight = 12,  cellwidth = 10, show_rownames = T, legend=T,  filename =  paste(cancer, "/drug/gene_reversed_two_color.pdf", sep="")) #,  filename = "reversibility.pdf"
-pheatmap(abs(drug_dz_signature_rotate), col = my.cols , annotation = annotation, cellheight = 12,  cellwidth = 10, show_rownames = T, legend=T,  filename =  paste(cancer, "/drug/gene_reversed_one_color.pdf", sep="")) #,  filename = "reversibility.pdf"
+pheatmap(-drug_dz_signature_rotate, col = redblue(100) , cellheight = 12,  cellwidth = 10, show_rownames = T, legend=T,  filename =  paste(cancer, "/drug/cmap_gene_reversed_two_color.pdf", sep="")) #,  filename = "reversibility.pdf"
+pheatmap(abs(drug_dz_signature_rotate), col = my.cols , annotation = annotation, cellheight = 12,  cellwidth = 10, show_rownames = T, legend=T,  filename =  paste(cancer, "/drug/cmap_gene_reversed_one_color.pdf", sep="")) #,  filename = "reversibility.pdf"
 
 ##################
 #violin plot 
@@ -313,28 +254,22 @@ for (i in 1:length(drugs)){
 }
 
 drugs_rank = data.frame(drugs, medians, means, ratios, counts)
+#rank by median
 drugs_rank = drugs_rank[order(drugs_rank$medians, decreasing=F),]
 #drugs_rank = subset(drugs_rank, counts > 1)
 head(drugs_rank, 25)
 tail(drugs_rank, 25)
 
+#visualize top hits using violin plot
 candidates = head(drugs_rank, 20)$drugs
 hits_scores = subset(drug_instances_all, name %in% candidates, select = c("exp_id", "cmap_score", "name"))
 names(hits_scores) = c("exp_id", "score", "group")
 hits_scores$class = hits_scores$group
-
-all_scores = drug_instances_all #subset(drug_instances_all,  tolower(name) %in% c(tolower(drugbank_drugs)), select = c("cmap_score"))
-names(all_scores) = c("score")
-all_scores$group = "ALL"
-all_scores$class = all_scores$group
-
 scores = rbind(hits_scores) #, all_scores
-
 scores = merge(scores, subset(drug_instances_all, select=c("exp_id",  "cell_line")), by = "exp_id")
 jitterWidth = 0.1
 jitterHight = 0
 color = ""
-
 ## data.frame must have at least three columns - score, group, class.
 ## In this case, data.frame$class = data.frame$group
 pdf(paste(cancer, "/drug/cmap_prediction_violin.pdf", sep=""))
@@ -360,8 +295,10 @@ dz_sig = results[[2]]
 
 drug_preds_sig = merge(drug_preds, lincs_experiments, by.x="exp_id", by.y="id")
 
-lincs_predictions_all = subset(drug_preds_sig, cell_id %in% c("HEPG2", "HUH7"))
+lincs_predictions_all = subset(drug_preds_sig, cell_id %in% c("HEPG2", "HUH7") & DrugBank.ID != "NULL")
 lincs_predictions_all = lincs_predictions_all[order(lincs_predictions_all$cmap_score),]
+
+write.csv(lincs_predictions_all, paste(cancer, "/drug/lincs_drug_predictions.csv", sep=""))
 
 #visualize score distritbution
 segmentWidth = 0.025
@@ -401,7 +338,7 @@ if (re_rank_instance > 0){
 
 drug_names <- sapply(2:ncol(drug_dz_signature), function(id){
   new_id = strtoi(paste(unlist(strsplit(as.character(colnames(drug_dz_signature)[id]),""))[-1], collapse="")) 
-  lincs_experiments$pert_iname[lincs_experiments$id == colnames(drug_dz_signature)[id]]
+  lincs_experiments$pert_iname[lincs_experiments$id == new_id]
 })
 
 
@@ -418,8 +355,8 @@ pdf(paste(cancer, "/drug/lincs_predictions.pdf", sep=""))
   axis(1,  at=seq(0,1,length.out= ncol( drug_dz_signature ) ), labels= F)
   text(x = seq(0,1,length.out=ncol( drug_dz_signature ) ), c(-0.05),
        labels = c( "HCC",drug_names), srt = 45, pos=2,offset=0.05, xpd = TRUE, cex=1.4, col = c("red",   cols = ifelse(tolower(drug_names) %in% in_vitro_list, "darkgreen", "black")))
-                                                                                                                                                                               
 dev.off()
+write.csv(drug_dz_signature, paste(cancer, "/drug/lincs_drug_dz_signature.csv", sep=""))
 
 drug_dz_signature_reversed = (drug_dz_signature - drug_dz_signature[, 1]) #abs
 drug_dz_signature_reversed = drug_dz_signature_reversed[, -c(1)]
@@ -444,11 +381,7 @@ pheatmap(abs(drug_dz_signature_rotate), col = my.cols , annotation = annotation,
 
 ###############
 ###enrichment analysis
-
-drug_names = lincs_predictions$pert_iname[1:20]
-
 drugs = unique(lincs_predictions$pert_iname[lincs_predictions$q < 0.05])
-
 #signicant cutoff
 sig_cutoff = max(lincs_predictions$cmap_score[lincs_predictions$q < 0.05 & lincs_predictions$cmap_score < 0])
 
@@ -469,40 +402,27 @@ drugs_rank = drugs_rank[order(drugs_rank$medians, decreasing=F),]
 head(drugs_rank, 25)
 tail(drugs_rank, 25)
 
-cdata <- ddply(lincs_predictions, .(pert_iname), summarise, 
-               mean_score = mean(cmap_score),
-               len = length(cmap_score)
-)
-qnorm(0.05, mean = mean(cdata$mean_score), sd = sd(cdata$mean_score), lower.tail = T )
 
 
-par(mar=c(4, 4, 2, 4))
-
+#candidates are top 20 ranked drugs or the hits with top average score
+drug_names = lincs_predictions$pert_iname[1:20]
 candidates = drug_names #as.character(drugs_rank$drugs[1:20]) #c("sotalol", "mebendazole", "brimonidine", "epibatidine")
-
-
 ##################
 #violin plot 
 hits_scores = subset(lincs_predictions, pert_iname %in% candidates, select = c("exp_id", "cmap_score", "pert_iname"))
 names(hits_scores) = c("exp_id", "score", "group")
 hits_scores$class = hits_scores$group
 
-all_scores = subset(lincs_predictions,  select = c("cmap_score"))
-names(all_scores) = c("score")
-all_scores$group = "ALL"
-all_scores$class = all_scores$group
-
-scores = rbind(hits_scores) #all_scores
-
+scores = rbind(hits_scores) #, all_scores
 scores = merge(scores, subset(lincs_predictions, select=c("exp_id",  "cell_id")), by = "exp_id")
 
 segmentWidth = 0.025
 jitterWidth = 0.1
 jitterHight = 0
 color = ""
-
 ## data.frame must have at least three columns - score, group, class.
 ## In this case, data.frame$class = data.frame$group
+par(mar=c(4, 4, 2, 4))
 pdf(paste(cancer, "/drug/lincs_prediction_violin.pdf", sep=""))
   drug_order <- aggregate(score ~ group + class, scores, median)
   drug_ordered <- drug_order$group[order(drug_order$score, decreasing=T)]
@@ -512,34 +432,26 @@ pdf(paste(cancer, "/drug/lincs_prediction_violin.pdf", sep=""))
 dev.off()
 
 
+############
+#merge LINCS and CMap
+############
 
-#find common drugs 
-query <- paste("select * from proj_repositioning.v_cmap_hits_valid  where cmap_score < 0  and valid =1 and subset_comparison_id = 'lihc_final_v1' and q_value < 0.05 order by cmap_score  "    )         
-rs <- dbSendQuery(con, query)    
-cmap_results <- fetch(rs, n = -1)
-drugbank_drugs = dbReadTable(con, "user_binchen1.drugbank_drugs_new")
-drugbank_drugs = drugbank_drugs$name
-cmap_results = subset(cmap_results, tolower(name) %in% tolower(drugbank_drugs))
-write.csv(cmap_results, "cmap_results.csv")
+cmap_results = read.csv(paste(cancer, "/drug/cmap_drug_predictions.csv", sep=""), stringsAsFactors = F)
+lincs_results = read.csv(paste(cancer, "/drug/lincs_drug_predictions.csv", sep=""), stringsAsFactors = F)
 
-rs <- dbSendQuery(con, paste("select experiment_id, cmap_score, q_value,q_value, sig_id,pert_desc, pert_time,pert_dose, pert_iname, cell_id from proj_lincs.v_lincs_predictions_drugs where cmap_score<0 and q_value < 0.05 and subset_comparison_id ='", "lihc_final", "' order by cmap_score", sep=""))    
-lincs_results <- fetch(rs, n = -1)
-write.csv(lincs_results, "lincs_results.csv")
+cmap_drugs = subset(cmap_results, q < 0.01 & cmap_score < 0)
+lincs_drugs = subset(lincs_results, q < 0.01 & cmap_score < 0)
 
-rs <- dbSendQuery(con, paste("select experiment_id, cmap_score, q_value,q_value, sig_id,pert_desc, pert_time,pert_dose, pert_iname, cell_id from proj_lincs.v_lincs_predictions_drugs where cell_id in ('HEPG2', 'HUH7') and cmap_score<0 and q_value < 0.05 and subset_comparison_id ='", "lihc_final", "' order by cmap_score", sep=""))    
-lincs_results_HCC_cell_line <- fetch(rs, n = -1)
-write.csv(lincs_results_HCC_cell_line, "lincs_results_HCC_cell_line.csv")
+common_drugs = intersect(tolower(cmap_drugs$name), tolower(lincs_drugs$pert_iname))
 
-common_drugs = intersect(tolower(cmap_results$name), tolower(lincs_results_HCC_cell_line$pert_iname))
-
-write.csv(common_drugs, "cmap_lincs_results_HCC_cell_line_common.csv")
+write.csv(common_drugs, paste(cancer, "/drug/cmap_lincs_results_common.csv", sep=""))
 
 source("http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/overLapper.R") # Imports required functions.
-setlist <- list(CMAP = unique(tolower(cmap_results$name)), LINCS=unique(lincs_results_HCC_cell_line$pert_iname)) # ,C=unique(set1$GeneID[set1$up_down=="down"]), D=unique(set2$GeneID[set2$up_down=="down"]))
+setlist <- list(CMAP = unique(tolower(cmap_drugs$name)), LINCS=unique(lincs_drugs$pert_iname)) # ,C=unique(set1$GeneID[set1$up_down=="down"]), D=unique(set2$GeneID[set2$up_down=="down"]))
 setlist2 <- setlist[c(1,2)]; 
 list2 <- overLapper(setlist=setlist2, sep="_", type="vennsets")
 counts <- sapply(list2$Venn_List, length);
-pdf("cmap_lincs_overlap.pdf")
+pdf(paste(cancer, "/drug/cmap_lincs_overlap.pdf", sep=""))
   vennPlot(counts=counts)
 dev.off()
 

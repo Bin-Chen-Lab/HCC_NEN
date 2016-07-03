@@ -1,21 +1,20 @@
 #compare patient tumor samples vs their drug response data
 #whole-genome data will be used
-#look proportion of patients who will be reversed by NEN/Niclo in vivo and in vitro.
+#look proportion of patients who will be reversed by NEN/Niclo in vivo
 #only look patients who have matched non-tumor
-
-setwd("/Users/binchen1/Documents/stanford/hcc/data/")
 
 library(DESeq) 
 library(edgeR) 
+library(gplots)
+library(ggplot2)
+
 
 cancer = "LIHC"
 load(paste(cancer, "/tumor_info.RData", sep=""))
 load(paste(cancer, "/countTable.RData", sep="")) #use scale esimate below
 load(paste(cancer, "/cds.RData", sep=""))
 
-#load(paste(cancer, "/scale_estimate.RData", sep=""))
-
-data2 = read.csv("microarray//Group3/data2.csv")
+data2 = read.csv("raw/microarray/pdx/data2.csv")
 data2 = subset(data2, fail.count<3)
 drug_fc = aggregate(Test.Control.fc ~ GENE_ID, data2, mean)
 names(drug_fc) = c( "GeneID", "fc")
@@ -24,11 +23,12 @@ names(drug_fc) = c( "GeneID", "fc")
 normalized_cds_all = counts( cds, normalized=TRUE )
 
 tumor_info = subset(tumor_info, quality != "outlier" & rownames(tumor_info) %in% colnames(normalized_cds_all))
-gene_ids = sapply(rownames(normalized_cds_all), function(id){unlist(strsplit(id, "\\|"))[2]})
+gene_ids = rownames(normalized_cds_all) #sapply(rownames(normalized_cds_all), function(id){unlist(strsplit(id, "\\|"))[2]})
 
-
-signatures <- read.table("LIHC/drug/LIHC_dz_signature_cmap_final_v1.txt",header=T,sep="\t") #at least cover gene id and value that can be either fold change or p value
+signatures <- read.table(paste(cancer, "/drug/dz_signature_cmap.txt", sep=""),header=T,sep="\t") 
 dz_sig = subset(signatures, select=c("GeneID", "value"))
+
+drug_fc = subset(drug_fc, GeneID %in% dz_sig$GeneID)
 
 patient_freq = table(tumor_info$bcr_patient_barcode)
 matched_patients = names(patient_freq[patient_freq>1])
@@ -51,7 +51,6 @@ for (patient in matched_patients){
    
    patient_sig = data.frame(patient_sig, gene_ids)
 
-   
    patient_drug = merge( drug_fc, patient_sig, by.x="GeneID", by.y="gene_ids")
    patient_drug = merge( dz_sig,patient_drug, by="GeneID", sort=F)
    
@@ -63,8 +62,9 @@ colnames(patient_sigs) = c("GeneID", matched_patients)
 patient_drug_cor$p.adj = p.adjust(patient_drug_cor$p, "fdr")
 
 sum(patient_drug_cor$p.adj<0.01)/nrow(patient_drug_cor)
+
 #81%
-save(patient_sigs, file="tcga_matched_patient_expr.RData")
+save(patient_sigs, file=paste(cancer, "/tcga_matched_patient_expr.RData", sep=""))
 
 patient_drug_cor = patient_drug_cor[order(patient_drug_cor$p.adj), ]
 #clinical features of non-reversed patient
@@ -93,16 +93,13 @@ patient_labels = sapply(names(col_sorted), function(patient){
   }
 })
 
-library(gplots)
-library(ggplot2)
 
-pdf("LIHC/patient_response.pdf")
-colPal <- greenred(100)
-par(mar=c(12, 4, 2, 0.5))
-#image(t(druggable_targets_pos), col=redblue(2))
-image(t(patients_drug_rank), col= colPal,   axes=F, srt=45)
-axis(1,  at=seq(0,1,length.out= ncol( patients_drug_rank ) ), labels= F)
-text(x = seq(0,1,length.out=ncol( patients_drug_rank ) ), c(-0.05),
-     labels = c( "NEN",patient_labels), srt = 45, pos=2,offset=0.05, xpd = TRUE, cex=0.7)
-
+pdf(paste(cancer, "/reverse/patient_response.pdf", sep=""))
+  colPal <- greenred(100)
+  par(mar=c(12, 4, 2, 0.5))
+  #image(t(druggable_targets_pos), col=redblue(2))
+  image(t(patients_drug_rank), col= colPal,   axes=F, srt=45)
+  axis(1,  at=seq(0,1,length.out= ncol( patients_drug_rank ) ), labels= F)
+  text(x = seq(0,1,length.out=ncol( patients_drug_rank ) ), c(-0.05),
+       labels = c( "NEN",patient_labels), srt = 45, pos=2,offset=0.05, xpd = TRUE, cex=0.7)
 dev.off()

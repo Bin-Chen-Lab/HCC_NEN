@@ -162,7 +162,7 @@ if (nrow(dz_genes_down)> max_gene_size){
         dz_genes_down <- data.frame(GeneID=dz_genes_down[1:max_gene_size,])
 }
 
-load('raw/cmap/geneid_processed_data_all.RData')
+load('raw/cmap/cmap_signatures.RData')
 gene_list <- subset(cmap_signatures,select=1)
 cmap_signatures <- cmap_signatures[,2:ncol(cmap_signatures)] # Shouldn't overwrite, but worried about memory usage
 dz_cmap_scores <- sapply(1:ncol(cmap_signatures),function(exp_id) {

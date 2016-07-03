@@ -157,8 +157,8 @@ if (nrow(dz_genes_down)> max_gene_size){
 
 print ((nrow(dz_genes_up)+nrow(dz_genes_down)))
 
-#load('/home/binchen1/scratch/geneid_processed_data_all.RData')
-load('raw/cmap/geneid_processed_data_all.RData')
+#load('/home/binchen1/scratch/cmap_signatures.RData')
+load('raw/cmap/cmap_signatures.RData')
 gene_list <- subset(cmap_signatures,select=1)
 cmap_signatures <- cmap_signatures[,2:ncol(cmap_signatures)] 
 N_PERMUTATIONS <- 100000 #default 100000

@@ -13,4 +13,5 @@ system(cmd)
 cmd = paste("Rscript ../code/drug_prediction/predict_drugs_lincs.R", cancer, "lincs", paste(cancer, "/drug/dz_signature_lincs.txt", sep=""), 1)
 system(cmd)
 
-#analyze results
+#analyze predictions
+source("../code/drug_prediction/drug_repurpose.R")
