@@ -157,7 +157,7 @@ dev.off()
 drug_instances = subset(drug_instances_all, q < 0.05)
 drug_instances = drug_instances[order(drug_instances$cmap_score), ]
 
-drug_instances_id <- drug_instances$exp_id[1:20] + 1 #the first column is the gene id
+drug_instances_id <- drug_instances$exp_id[c(1:20, (nrow(drug_instances)-5):nrow(drug_instances))] + 1 #the first column is the gene id
 #get candidate drugs
 drug_signatures <- cmap_signatures[,c(1, drug_instances_id)] #the first column is the gene id
 
@@ -193,7 +193,7 @@ pdf(paste(cancer, "/drug/", "cmap_predictions.pdf", sep=""))
   #image(t(druggable_targets_pos), col=redblue(2))
   image(t(drug_dz_signature), col= colPal,   axes=F, srt=45)
   axis(1,  at=seq(0,1,length.out= ncol( drug_dz_signature ) ), labels= F)
-  cols = ifelse(tolower(drug_names) %in% in_vitro_list, "darkgreen", "black")
+  cols = ifelse(tolower(drug_names) %in% in_vitro_list, "red", "black")
   text(x = seq(0,1,length.out=ncol( drug_dz_signature ) ), c(-0.05),
      labels = c( "HCC",drug_names), srt = 45, pos=2,offset=0.05, xpd = TRUE, cex=1.4, col = c("red", cols))
 dev.off()
@@ -315,7 +315,7 @@ lincs_predictions = lincs_predictions_all
 
 #visualize top 20 drugs
 #get drug signatures
-sig_ids = lincs_predictions$exp_id[1:20]
+sig_ids = lincs_predictions$exp_id[c(1:20, (nrow(lincs_predictions)-5):nrow(lincs_predictions))]
 drug_names = lincs_predictions$pert_iname[1:20]
 sigs = data.frame(gene_id =landmark$gene_id, lincs_signatures[, as.character(sig_ids)])
 
@@ -351,7 +351,7 @@ pdf(paste(cancer, "/drug/lincs_predictions.pdf", sep=""))
   par(mar=c(12, 4, 1, 0.5))
   colPal <- redgreen(100)
   image(t(drug_dz_signature), col= colPal,   axes=F, srt=45)
-  cols = ifelse(tolower(drug_names) %in% in_vitro_list, "darkgreen", "black")
+  cols = ifelse(tolower(drug_names) %in% in_vitro_list, "red", "black")
   axis(1,  at=seq(0,1,length.out= ncol( drug_dz_signature ) ), labels= F)
   text(x = seq(0,1,length.out=ncol( drug_dz_signature ) ), c(-0.05),
        labels = c( "HCC",drug_names), srt = 45, pos=2,offset=0.05, xpd = TRUE, cex=1.4, col = c("red",   cols = ifelse(tolower(drug_names) %in% in_vitro_list, "darkgreen", "black")))
@@ -439,12 +439,14 @@ dev.off()
 cmap_results = read.csv(paste(cancer, "/drug/cmap_drug_predictions.csv", sep=""), stringsAsFactors = F)
 lincs_results = read.csv(paste(cancer, "/drug/lincs_drug_predictions.csv", sep=""), stringsAsFactors = F)
 
-cmap_drugs = subset(cmap_results, q < 0.01 & cmap_score < 0)
-lincs_drugs = subset(lincs_results, q < 0.01 & cmap_score < 0)
+common_drugs = intersect(tolower(cmap_results$name), tolower(lincs_results$pert_iname))
 
-common_drugs = intersect(tolower(cmap_drugs$name), tolower(lincs_drugs$pert_iname))
+cmap_drugs = subset(cmap_results, q < 0.05 & cmap_score < 0)
+lincs_drugs = subset(lincs_results, q < 0.05 & cmap_score < 0)
 
-write.csv(common_drugs, paste(cancer, "/drug/cmap_lincs_results_common.csv", sep=""))
+common_hits = intersect(tolower(cmap_drugs$name), tolower(lincs_drugs$pert_iname))
+
+write.csv(common_hits, paste(cancer, "/drug/cmap_lincs_results_common.csv", sep=""))
 
 source("http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/overLapper.R") # Imports required functions.
 setlist <- list(CMAP = unique(tolower(cmap_drugs$name)), LINCS=unique(lincs_drugs$pert_iname)) # ,C=unique(set1$GeneID[set1$up_down=="down"]), D=unique(set2$GeneID[set2$up_down=="down"]))

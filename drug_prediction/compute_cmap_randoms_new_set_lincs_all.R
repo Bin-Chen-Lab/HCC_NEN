@@ -146,14 +146,16 @@ cmap_score <- function(sig_up, sig_down, drug_signature) {
 }
 
 
-landmark_data = read.csv("raw/lincs/lincs_landmark.csv")
 if (landmark == 1){
+  landmark_data = read.csv("raw/lincs/lincs_landmark.csv")
   gene.list = landmark_data$gene_id
+  load("raw/lincs/lincs_signatures_cmpd_landmark.RData")
+  
 }else{
-  stop("only support landmark")
+  landmark_data = read.csv("raw/lincs/probe_id_info.csv")
+  gene.list = landmark_data$gene_id
+  load("raw/lincs/lincs_signatures_cmpd_hcc_all.RData")
 }
-
-load("raw/lincs/lincs_signatures_cmpd_landmark.RData")
 
 lincs_sig_info = read.csv("raw/lincs/lincs_sig_info.csv")
 lincs_sig_info = subset(lincs_sig_info, id %in% colnames(lincs_signatures))
@@ -180,7 +182,7 @@ if (nrow(dz_genes_down)> max_gene_size){
 
 print ((nrow(dz_genes_up)+nrow(dz_genes_down)))
 
-N_PERMUTATIONS <- 100000 #default 100000
+N_PERMUTATIONS <- 10000 #default 100000
 random_sig_ids = sample(colnames(lincs_signatures),N_PERMUTATIONS,replace=T)
 count = 0
 random_cmap_scores = NULL
@@ -190,8 +192,7 @@ for (exp_id in random_sig_ids){
   if (landmark ==1){
     cmap_exp_signature <- data.frame(gene.list,  rank(-1 * lincs_signatures[, as.character(exp_id)], ties.method="random"))    
   }else{
-    stop("error, only support landmark")
-    #cmap_exp_signature <- cbind(gene.list,  get.sigs(exp_id))    
+    cmap_exp_signature <- data.frame(gene.list,  lincs_signatures[, as.character(exp_id)])    
   }
   colnames(cmap_exp_signature) <- c("ids","rank")
   

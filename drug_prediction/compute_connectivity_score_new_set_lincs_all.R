@@ -150,14 +150,17 @@ cmap_score <- function(sig_up, sig_down, drug_signature) {
 
 
 
-landmark_data = read.csv("raw/lincs/lincs_landmark.csv")
 if (landmark == 1){
+  landmark_data = read.csv("raw/lincs/lincs_landmark.csv")
   gene.list = landmark_data$gene_id
+  load("raw/lincs/lincs_signatures_cmpd_landmark.RData")
+  
 }else{
-  stop("only support landmark")
+  landmark_data = read.csv("raw/lincs/probe_id_info.csv")
+  gene.list = landmark_data$gene_id
+  load("raw/lincs/lincs_signatures_cmpd_hcc_all.RData")
 }
 
-load("raw/lincs/lincs_signatures_cmpd_landmark.RData")
 #lincs_signatures = lincs_signatures[, 1:1000]
 lincs_sig_info = read.csv("raw/lincs/lincs_sig_info.csv")
 lincs_sig_info = subset(lincs_sig_info, id %in% colnames(lincs_signatures))
@@ -192,10 +195,10 @@ for (exp_id in sig.ids) {
   if (landmark ==1){
     cmap_exp_signature <- data.frame(gene.list,  rank(-1 * lincs_signatures[, as.character(exp_id)], ties.method="random"))    
   }else{
-    cmap_exp_signature <- cbind(gene.list,  get.sigs(exp_id))    
+    cmap_exp_signature <- data.frame(gene.list,  lincs_signatures[, as.character(exp_id)])    
   }
   colnames(cmap_exp_signature) <- c("ids","rank")
-  dz_cmap_scores = c(dz_cmap_scores, cmap_score_new(dz_genes_up,dz_genes_down,cmap_exp_signature))
+  dz_cmap_scores = c(dz_cmap_scores, cmap_score(dz_genes_up,dz_genes_down,cmap_exp_signature))
 }
 
 
@@ -214,5 +217,5 @@ q_values <- qvalue(p_values)$qvalues
 drugs = data.frame(exp_id = sig.ids, cmap_score = dz_cmap_scores, p = p_values, q = q_values, subset_comparison_id, analysis_id
 )
 results = list(drugs, dz_signature)
-save(results, file=paste(subset_comparison_id, "/drug/", "lincs_predictions.RData", sep=""))
+save(results, file=paste(subset_comparison_id, "/drug/", "lincs_predictions", landmark, ".RData", sep=""))
 

@@ -10,7 +10,10 @@ cmd = paste("Rscript ../code/drug_prediction/predict_drugs_cmap.R", cancer, "cma
 system(cmd)
 
 #predict lincs drugs. Take a few of hours
-cmd = paste("Rscript ../code/drug_prediction/predict_drugs_lincs.R", cancer, "lincs", paste(cancer, "/drug/dz_signature_lincs.txt", sep=""), 1)
+#cmd = paste("Rscript ../code/drug_prediction/predict_drugs_lincs.R", cancer, "lincs", paste(cancer, "/drug/dz_signature_lincs.txt", sep=""), 1)
+
+cmd = paste("Rscript ../code/drug_prediction/predict_drugs_lincs.R", cancer, "lincs", paste(cancer, "/drug/dz_signature_cmap.txt", sep=""), 0)
+
 system(cmd)
 
 #analyze predictions
