@@ -1,16 +1,18 @@
 This pipeline is used to identify drug hits for hepatocellular carcinoma ([Chen B. Gastroenterology, 2017](http://www.gastrojournal.org/article/S0016-5085(17)30264-0/abstract)). It can be applied to other cancers as well. 
+
+
 ![alt text](https://github.com/Bin-Chen-Lab/HCC_NEN/blob/master/workflow_general.png "work flow")
 
 
-The pipeline includes four components:
-##tumor_cell_line
+The pipeline includes four major components:
+#tumor_cell_line
 Correlate tumor samples and cell lines
 
 Select tumor samples that are not correlated to cell lines
 
 Select cell lines that are correlated to tumor samples
 
-##disease_sig
+#disease_sig
 Create disease gene expression signatures
 
 Validate signatures using external sets
@@ -30,6 +32,6 @@ Identify genes reversed by the drugs
 
 2) set up workspace in main.R
 
-3) run workflow.R under each component. 
+3) run workflow.R. It takes a while to finish, so it is recommended to run line by line.
 
 Contact Bin Chen (bin.chen@ucsf.edu) for any questions.
