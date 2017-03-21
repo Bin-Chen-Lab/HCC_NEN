@@ -1,13 +1,13 @@
-This pipeline is used to identify drugs for liver cancer. It can be easily applied to other cancers as well. 
+This pipeline is used to identify drug hits for hepatocellular carcinoma ([I'm an inline-style link with title](www.gastrojournal.org/article/S0016-5085(17)30264-0/abstract "Chen B. Gastroenterology, 2017")). It can be applied to other cancers as well. 
 ![alt text][overview]
 [overview]: https://github.com/Bin-Chen-Lab/HCC_NEN/blob/master/workflow_general.png "workflow overview"
 
 
-The code includes  four components:
+The pipeline includes four components:
 ##tumor_cell_line
 Correlate tumor samples and cell lines
 
-Select tumor sampels that are not correlated to cell lines
+Select tumor samples that are not correlated to cell lines
 
 Select cell lines that are correlated to tumor samples
 
