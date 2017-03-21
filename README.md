@@ -1,6 +1,5 @@
 This pipeline is used to identify drug hits for hepatocellular carcinoma ([Chen B. Gastroenterology, 2017](http://www.gastrojournal.org/article/S0016-5085(17)30264-0/abstract)). It can be applied to other cancers as well. 
-![alt text][overview]
-[overview]: https://github.com/Bin-Chen-Lab/HCC_NEN/blob/master/workflow_general.png "workflow overview"
+![alt text](https://github.com/Bin-Chen-Lab/HCC_NEN/blob/master/workflow_general.png "work flow")
 
 
 The pipeline includes four components:
