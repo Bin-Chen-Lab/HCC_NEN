@@ -13,9 +13,9 @@ if (length(args)<4){
 }
 
 #compute random scores, used for signficance analysis
-cmd = paste("Rscript ../code/drug_prediction/compute_cmap_randoms_new_set_lincs_all.R", subset_comparison_id, analysis_id, dz_sig_path, landmark)
+cmd <- paste("Rscript ../code/drug_prediction/compute_cmap_randoms_new_set_lincs_all.R", subset_comparison_id, analysis_id, dz_sig_path, landmark)
 system(cmd)
 
 #compute cmap scores 
-cmd = paste("Rscript ../code/drug_prediction/compute_connectivity_score_new_set_lincs_all.R", subset_comparison_id, analysis_id, dz_sig_path, landmark)
+cmd <- paste("Rscript ../code/drug_prediction/compute_connectivity_score_new_set_lincs_all.R", subset_comparison_id, analysis_id, dz_sig_path, landmark)
 system(cmd)

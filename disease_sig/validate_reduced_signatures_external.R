@@ -25,80 +25,80 @@ readCodingTable <- function(infile, DEBUG=0) {
 
 ###
 #disease signatures
-landmark = read.csv("raw/lincs/lincs_landmark.csv")
+landmark <- read.csv("raw/lincs/lincs_landmark.csv")
 
-cancer = "LIHC"
-dz_padj_cutoff = 1E-3
-dz_fc_cutoff = 2
+cancer <- "LIHC"
+dz_padj_cutoff <- 1E-3
+dz_fc_cutoff <- 2
 load(paste(cancer, "/", cancer, '_sig_deseq_final.RData', sep=''))
-dz_signature = subset(res, !is.na(padj) & !is.na(id) & id !='?' & padj < dz_padj_cutoff & abs(log2FoldChange) > dz_fc_cutoff & abs(log2FoldChange) != Inf )
+dz_signature <- subset(res, !is.na(padj) & !is.na(id) & id !='?' & padj < dz_padj_cutoff & abs(log2FoldChange) > dz_fc_cutoff & abs(log2FoldChange) != Inf )
 dz_signature$symbol= sapply(dz_signature$id, function(id){
   as.character(unlist(strsplit(id, "\\|"))[1])
 })
-dz_signature$GeneID = sapply(dz_signature$id, function(id){
+dz_signature$GeneID <- sapply(dz_signature$id, function(id){
   as.character(unlist(strsplit(id, "\\|"))[2])
 })
 
-dz_signature = subset(dz_signature, GeneID %in% landmark$gene_id)
+dz_signature <- subset(dz_signature, GeneID %in% landmark$gene_id)
 
 
 ct<-readCodingTable("meta_input.txt")
 ct <- subset(ct, valid == 1)
 
-OriginCodes = unique(ct$OriginCode)
+OriginCodes <- unique(ct$OriginCode)
 
-rocs = list()
+rocs <- list()
 
 for (code in OriginCodes){
-  ct_subset = subset(ct, OriginCode == code)
+  ct_subset <- subset(ct, OriginCode == code)
   #find GSE
-  GSE = ct_subset$GSE[1]
+  GSE <- ct_subset$GSE[1]
   #find GPL
-  GPL = ct_subset$GPL[1]
+  GPL <- ct_subset$GPL[1]
   #map
   
   #Pull out raw expression
-  rawValues = read.csv(paste("raw/geo/rawExpression/", GPL, ".RawExpressionValues.table", sep=""), sep="\t" )
+  rawValues <- read.csv(paste("raw/geo/rawExpression/", GPL, ".RawExpressionValues.table", sep=""), sep="\t" )
   raw_matrix1 <- normalize.quantiles(as.matrix(rawValues ))
   row.names(raw_matrix1) <- row.names(rawValues)
   colnames(raw_matrix1) <- colnames(rawValues)
   rawValues <- raw_matrix1
   
   #pull out gene mapping
-  geneMappings = read.csv(paste("raw/geo/geneMappings/", GPL, ".Probe2EntrezMap.table", sep=""), sep="\t" )
-  geneMappings = subset(geneMappings, select=c("probe", "GeneID"))
+  geneMappings <- read.csv(paste("raw/geo/geneMappings/", GPL, ".Probe2EntrezMap.table", sep=""), sep="\t" )
+  geneMappings <- subset(geneMappings, select=c("probe", "GeneID"))
   #build matrix
   
-  rawValues = data.frame(probe_id=rownames(rawValues), rawValues)
+  rawValues <- data.frame(probe_id=rownames(rawValues), rawValues)
   
-  expressions = merge(rawValues, geneMappings, by.x="probe_id", by.y="probe")
+  expressions <- merge(rawValues, geneMappings, by.x="probe_id", by.y="probe")
   
-  expressions = expressions[expressions$GeneID %in% dz_signature$GeneID, colnames(expressions) %in% c("GeneID", ct_subset$GSM)]
+  expressions <- expressions[expressions$GeneID %in% dz_signature$GeneID, colnames(expressions) %in% c("GeneID", ct_subset$GSM)]
   
-  expressions_by_gene = aggregate(. ~ GeneID, data= expressions, mean)
-  geneids = expressions_by_gene$GeneID
-  expressions_by_gene = expressions_by_gene[, -1]
-  genenames = merge(geneids, dz_signature, by.x=1, by.y="GeneID", sort=F)$Symbol
-  rownames(expressions_by_gene) = genenames
+  expressions_by_gene <- aggregate(. ~ GeneID, data= expressions, mean)
+  geneids <- expressions_by_gene$GeneID
+  expressions_by_gene <- expressions_by_gene[, -1]
+  genenames <- merge(geneids, dz_signature, by.x=1, by.y="GeneID", sort=F)$Symbol
+  rownames(expressions_by_gene) <- genenames
   
-  annotation = subset(ct_subset, select= c("GSM", "ClassCode"))
-  rownames(annotation) = annotation$GSM
-  annotation$ClassCode = as.factor(annotation$ClassCode)
-  annotation = subset(annotation, select=c("ClassCode"))
+  annotation <- subset(ct_subset, select= c("GSM", "ClassCode"))
+  rownames(annotation) <- annotation$GSM
+  annotation$ClassCode <- as.factor(annotation$ClassCode)
+  annotation <- subset(annotation, select=c("ClassCode"))
   
   my.cols <- redgreen(100) # brewer.pal(9, "Blues")
   pheatmap(scale(expressions_by_gene), col = my.cols, annotation = annotation,  cellheight= 12, show_colnames=F, legend=F, show_rownames=T , filename=paste( "~/Documents/stanford/hcc/data/", cancer,"/sig/heatmap_", code, "_lincs_reduced.pdf", sep="")) #
   
   #if (nrow(expressions_by_gene) < ncol(expressions_by_gene)){
-    pca = prcomp(t(expressions_by_gene))
-    sample_class = annotation[rownames(pca$x),1]
+    pca <- prcomp(t(expressions_by_gene))
+    sample_class <- annotation[rownames(pca$x),1]
     
     pdf(paste(cancer,"/dz_sig/pca_", code, "_lincs_reduced_final.pdf", sep=""))
     scatterplot3d(pca$x[,1:3], pch=20, color=sample_class) 
     dev.off()
   #}
   
-  rocs[[code]] = data.frame(pred = pca$x[,1], label = sample_class)
+  rocs[[code]] <- data.frame(pred = pca$x[,1], label = sample_class)
   
 }
 
@@ -115,8 +115,8 @@ pdf(paste(  cancer,"/dz_sig/reduced_rocs.pdf", sep=""))
 dev.off()
 
 
-aucs = sapply(1:length(rocs), function(i){
-     roc = roc(label ~ pred, rocs[[i]],col=1)
+aucs <- sapply(1:length(rocs), function(i){
+     roc <- roc(label ~ pred, rocs[[i]],col=1)
      roc$auc
    })
 mean(aucs)

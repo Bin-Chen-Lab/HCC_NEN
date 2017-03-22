@@ -1,11 +1,5 @@
-#this pipeline is to relate tumor samples and cell lines using gene expression data
-#tumors samples that are not correlated to cell lines should be removed in disease gene expression signature creation
-#cell lines that are correlated to tumor samples are suggested to used in validation
-
+#this pipeline can be used for any other cancers studied in TCGA.
 #author: Bin Chen (July 2014)
-
-#set up workspace
-setwd("~/Documents/stanford/hcc/release/data")
 
 ###################
 #parameters
@@ -49,4 +43,4 @@ source("../code/tumor_cell_line/compute_disease_signatures.R")
 #source("../code/tumor_cell_line/comput_tumor_cell_line_diff.R")
 
 #assess correlation between tumors from external datasets and cell lines 
-#source("../code/tumor_cell_line/external_dataset_cor_stats.R")
+source("../code/tumor_cell_line/external_dataset_cor_stats.R")

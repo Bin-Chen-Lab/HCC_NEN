@@ -33,6 +33,6 @@ Identify genes reversed by the drugs
 
 2) set up workspace in main.R
 
-3) run workflow.R. It takes a while to finish, so it is recommended to run line by line.
+3) run workflow.R. It takes a while to finish, so it is recommended to run one component by component.
 
 Contact Bin Chen (bin.chen@ucsf.edu) for any questions.

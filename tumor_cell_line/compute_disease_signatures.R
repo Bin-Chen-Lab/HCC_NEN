@@ -3,7 +3,6 @@
 library("RColorBrewer")
 library("gplots")
 library(DESeq)
-library("RMySQL")
 
 ###########
 load(paste(cancer,"/countTable.RData", sep=""))

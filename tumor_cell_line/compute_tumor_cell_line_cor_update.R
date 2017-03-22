@@ -1,4 +1,4 @@
-#compare expressions between TCGA tumors  and cell lines; detect the suspious samples; visualize the samples
+#compare expressions between TCGA tumors  and cell lines; detect inconsistent samples; visualize the samples
 
 library("RColorBrewer")
 library("gplots")
@@ -15,7 +15,7 @@ library(sparcl)
 is_outlier <- function(cancer, cell_line_one_tumor_anno){
   #compute correlation between tumors and dz related cell line as well as other cell lines
   ccle_tcga = read.csv("ccle_cellline_tcga_mapping_updated.csv", stringsAsFactors=F)
-  ccle_tcga_target_celllines = ccle_tcga$CCLE.name [ccle_tcga$tcga.tumor == cancer]
+  ccle_tcga_target_celllines = ccle_tcga$CCLE.name[ccle_tcga$tcga.tumor == cancer]
   cor_same = cell_line_one_tumor_anno$cor[cell_line_one_tumor_anno$CCLE.name  %in% ccle_tcga_target_celllines]
   cor_others = cell_line_one_tumor_anno$cor[!(cell_line_one_tumor_anno$CCLE.name  %in% ccle_tcga_target_celllines)]
   p = wilcox.test(cor_same, cor_others, alternative = 'greater')  

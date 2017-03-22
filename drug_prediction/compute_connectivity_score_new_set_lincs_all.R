@@ -1,5 +1,5 @@
 # Computes the ConnectivityMap score based on Marina's implementation of the KS-based CMap algorithm
-# $1 = subset_comparison_id, $2 = analysis_id
+# $1 <- subset_comparison_id, $2 <- analysis_id
 library(qvalue)
 
 args <- commandArgs(trailingOnly=T)
@@ -16,7 +16,7 @@ if (length(args)<4){
 cmap_score_new <- function(sig_up, sig_down, drug_signature) {
         #the old function does not support the input list with either all up genes or all down genes, this new function attempts to addess this, not fully validated
 	#Note. I think that creating the anonymous functions in each iteration of the sapply's below is slowing things down. Predefine them eventually.
-        num_genes = nrow(drug_signature)
+        num_genes <- nrow(drug_signature)
         ks_up <- 0
         ks_down <- 0
         connectivity_score <- 0
@@ -89,7 +89,7 @@ cmap_score_new <- function(sig_up, sig_down, drug_signature) {
 
 cmap_score <- function(sig_up, sig_down, drug_signature) {
 	# Note. I think that creating the anonymous functions in each iteration of the sapply's below is slowing things down. Predefine them eventually.
-	num_genes = nrow(drug_signature)
+	num_genes <- nrow(drug_signature)
 	ks_up <- 0
 	ks_down <- 0
 	connectivity_score <- 0
@@ -151,23 +151,23 @@ cmap_score <- function(sig_up, sig_down, drug_signature) {
 
 
 if (landmark == 1){
-  landmark_data = read.csv("raw/lincs/lincs_landmark.csv")
-  gene.list = landmark_data$gene_id
+  landmark_data <- read.csv("raw/lincs/lincs_landmark.csv")
+  gene.list <- landmark_data$gene_id
   load("raw/lincs/lincs_signatures_cmpd_landmark.RData")
   
 }else{
-  landmark_data = read.csv("raw/lincs/probe_id_info.csv")
-  gene.list = landmark_data$gene_id
+  landmark_data <- read.csv("raw/lincs/probe_id_info.csv")
+  gene.list <- landmark_data$gene_id
   load("raw/lincs/lincs_signatures_cmpd_hcc_all.RData")
 }
 
-#lincs_signatures = lincs_signatures[, 1:1000]
-lincs_sig_info = read.csv("raw/lincs/lincs_sig_info.csv")
-lincs_sig_info = subset(lincs_sig_info, id %in% colnames(lincs_signatures))
+#lincs_signatures <- lincs_signatures[, 1:1000]
+lincs_sig_info <- read.csv("raw/lincs/lincs_sig_info.csv")
+lincs_sig_info <- subset(lincs_sig_info, id %in% colnames(lincs_signatures))
 #remove duplicate instances
-lincs_sig_info = lincs_sig_info[!duplicated(lincs_sig_info$id),]
+lincs_sig_info <- lincs_sig_info[!duplicated(lincs_sig_info$id),]
 
-sig.ids = lincs_sig_info$id
+sig.ids <- lincs_sig_info$id
 
 
 #load gist genes
@@ -177,7 +177,7 @@ dz_genes_up <- subset(dz_signature,up_down=="up",select="GeneID")
 dz_genes_down <- subset(dz_signature,up_down=="down",select="GeneID")
 
 #only choose the top 100 genes
-max_gene_size = 150
+max_gene_size <- 150
 if (nrow(dz_genes_up)> max_gene_size){
         dz_genes_up <- data.frame(GeneID= dz_genes_up[1:max_gene_size,])
 }
@@ -186,10 +186,10 @@ if (nrow(dz_genes_down)> max_gene_size){
 }
 
 
-dz_cmap_scores = NULL
-count = 0
+dz_cmap_scores <- NULL
+count <- 0
 for (exp_id in sig.ids) {
-  count = count + 1
+  count <- count + 1
   print(count)
   #print(paste("Computing score for disease against cmap_experiment_id =",exp_id))
   if (landmark ==1){
@@ -198,7 +198,7 @@ for (exp_id in sig.ids) {
     cmap_exp_signature <- data.frame(gene.list,  lincs_signatures[, as.character(exp_id)])    
   }
   colnames(cmap_exp_signature) <- c("ids","rank")
-  dz_cmap_scores = c(dz_cmap_scores, cmap_score(dz_genes_up,dz_genes_down,cmap_exp_signature))
+  dz_cmap_scores <- c(dz_cmap_scores, cmap_score(dz_genes_up,dz_genes_down,cmap_exp_signature))
 }
 
 
@@ -214,7 +214,7 @@ p_values <- sapply(dz_cmap_scores,function(score) {
 print("COMPUTING q-values")
 q_values <- qvalue(p_values)$qvalues
 
-drugs = data.frame(exp_id = sig.ids, cmap_score = dz_cmap_scores, p = p_values, q = q_values, subset_comparison_id, analysis_id
+drugs <- data.frame(exp_id = sig.ids, cmap_score = dz_cmap_scores, p = p_values, q = q_values, subset_comparison_id, analysis_id
 )
 results = list(drugs, dz_signature)
 save(results, file=paste(subset_comparison_id, "/drug/", "lincs_predictions", landmark, ".RData", sep=""))

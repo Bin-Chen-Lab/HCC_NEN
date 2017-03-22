@@ -1,4 +1,4 @@
-#scripts used to correct signficance between tumors and cell lines. Random samples were taken from expO 
+#scripts used to correct signficance between tumors and cell lines. Random samples were taken from expO
 # the cutoff may be slightly different due to the random sampling.
 
 library(GEOquery)
@@ -6,7 +6,7 @@ library(GEOquery)
 is_outlier <- function(cancer, cell_line_one_tumor_anno){
   #compute correlation between tumors and dz related cell line as well as other cell lines
   ccle_tcga = read.csv("ccle_cellline_tcga_mapping_updated.csv", stringsAsFactors=F)
-  ccle_tcga_target_celllines = ccle_tcga$CCLE.name [ccle_tcga$tcga.tumor == cancer]
+  ccle_tcga_target_celllines = ccle_tcga$CCLE.name[ccle_tcga$tcga.tumor == cancer]
   cor_same = cell_line_one_tumor_anno$cor[cell_line_one_tumor_anno$CCLE.name  %in% ccle_tcga_target_celllines]
   cor_others = cell_line_one_tumor_anno$cor[!(cell_line_one_tumor_anno$CCLE.name  %in% ccle_tcga_target_celllines)]
   p = wilcox.test(cor_same, cor_others, alternative = 'greater')  

@@ -12,7 +12,7 @@ if (length(args)<3){
 
 cmap_score <- function(sig_up, sig_down, drug_signature) {
         #the old function does not support the input list with either all up genes or all down genes, this new function attempts to addess this, not fully validated
-        num_genes = nrow(drug_signature)
+        num_genes <- nrow(drug_signature)
         ks_up <- 0
         ks_down <- 0
         connectivity_score <- 0
@@ -83,7 +83,7 @@ cmap_score <- function(sig_up, sig_down, drug_signature) {
 
 cmap_score_old <- function(sig_up, sig_down, drug_signature) {
 	
-	num_genes = nrow(drug_signature)
+	num_genes <- nrow(drug_signature)
 	ks_up <- 0
 	ks_down <- 0
 	connectivity_score <- 0
@@ -146,7 +146,7 @@ dz_signature <- read.table(dz_sig_path,header=T,sep="\t")
 dz_genes_up <- subset(dz_signature,up_down=="up",select="GeneID")
 dz_genes_down <- subset(dz_signature,up_down=="down",select="GeneID")
 
-max_gene_size = 150
+max_gene_size <- 150
 #only select 150 genes; empirical experience
 if (nrow(dz_genes_up)> max_gene_size){
 	dz_genes_up <- data.frame(GeneID=dz_genes_up[1:max_gene_size,])

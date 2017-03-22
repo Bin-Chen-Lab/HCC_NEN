@@ -2,6 +2,6 @@ refer to workflow.R
 
 #predict drugs using CMap database
 
-#predict drugs using lincs database
+#predict drugs using LINCS database
 
 

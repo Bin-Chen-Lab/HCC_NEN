@@ -14,7 +14,7 @@ if (length(args)<4){
 cmap_score_old <- function(sig_up, sig_down, drug_signature) {
         #the old function does not support the input list with either all up genes or all down genes, this new function attempts to addess this, not fully validated
         #Note. I think that creating the anonymous functions in each iteration of the sapply's below is slowing things down. Predefine them eventually.
-        num_genes = nrow(drug_signature)
+        num_genes <- nrow(drug_signature)
         ks_up <- 0
         ks_down <- 0
         connectivity_score <- 0
@@ -87,7 +87,7 @@ cmap_score_old <- function(sig_up, sig_down, drug_signature) {
 
 cmap_score <- function(sig_up, sig_down, drug_signature) {
 	
-	num_genes = nrow(drug_signature)
+	num_genes <- nrow(drug_signature)
 	ks_up <- 0
 	ks_down <- 0
 	connectivity_score <- 0
@@ -147,22 +147,22 @@ cmap_score <- function(sig_up, sig_down, drug_signature) {
 
 
 if (landmark == 1){
-  landmark_data = read.csv("raw/lincs/lincs_landmark.csv")
-  gene.list = landmark_data$gene_id
+  landmark_data <- read.csv("raw/lincs/lincs_landmark.csv")
+  gene.list <- landmark_data$gene_id
   load("raw/lincs/lincs_signatures_cmpd_landmark.RData")
   
 }else{
-  landmark_data = read.csv("raw/lincs/probe_id_info.csv")
-  gene.list = landmark_data$gene_id
+  landmark_data <- read.csv("raw/lincs/probe_id_info.csv")
+  gene.list <- landmark_data$gene_id
   load("raw/lincs/lincs_signatures_cmpd_hcc_all.RData")
 }
 
-lincs_sig_info = read.csv("raw/lincs/lincs_sig_info.csv")
-lincs_sig_info = subset(lincs_sig_info, id %in% colnames(lincs_signatures))
+lincs_sig_info <- read.csv("raw/lincs/lincs_sig_info.csv")
+lincs_sig_info <- subset(lincs_sig_info, id %in% colnames(lincs_signatures))
 #remove duplicate instances
-lincs_sig_info = lincs_sig_info[!duplicated(lincs_sig_info$id),]
+lincs_sig_info <- lincs_sig_info[!duplicated(lincs_sig_info$id),]
 
-sig.ids = lincs_sig_info$id
+sig.ids <- lincs_sig_info$id
 
 # Load in the signature for the subset_comparison_id
 dz_signature <- read.table(dz_sig_path,header=T,sep="\t")
@@ -171,7 +171,7 @@ dz_signature <- subset(dz_signature, GeneID %in% gene.list)
 dz_genes_up <- subset(dz_signature,up_down=="up",select="GeneID")
 dz_genes_down <- subset(dz_signature,up_down=="down",select="GeneID")
 
-max_gene_size = 150
+max_gene_size <- 150
 #only select 100 genes
 if (nrow(dz_genes_up)> max_gene_size){
 	dz_genes_up <- data.frame(GeneID=dz_genes_up[1:max_gene_size,])
@@ -183,11 +183,11 @@ if (nrow(dz_genes_down)> max_gene_size){
 print ((nrow(dz_genes_up)+nrow(dz_genes_down)))
 
 N_PERMUTATIONS <- 10000 #default 100000
-random_sig_ids = sample(colnames(lincs_signatures),N_PERMUTATIONS,replace=T)
-count = 0
-random_cmap_scores = NULL
+random_sig_ids <- sample(colnames(lincs_signatures),N_PERMUTATIONS,replace=T)
+count <- 0
+random_cmap_scores <- NULL
 for (exp_id in random_sig_ids){
-  count = count + 1
+  count <- count + 1
   print(count)
   if (landmark ==1){
     cmap_exp_signature <- data.frame(gene.list,  rank(-1 * lincs_signatures[, as.character(exp_id)], ties.method="random"))    
@@ -199,9 +199,9 @@ for (exp_id in random_sig_ids){
   random_input_signature_genes <- sample(gene.list, (nrow(dz_genes_up)+nrow(dz_genes_down)))
   rand_dz_gene_up <- data.frame(GeneID=random_input_signature_genes[1:nrow(dz_genes_up)])
   rand_dz_gene_down <- data.frame(GeneID=random_input_signature_genes[(nrow(dz_genes_up)+1):length(random_input_signature_genes)])
-  random_cmap_scores = c(random_cmap_scores, cmap_score(rand_dz_gene_up,rand_dz_gene_down,cmap_exp_signature))
+  random_cmap_scores <- c(random_cmap_scores, cmap_score(rand_dz_gene_up,rand_dz_gene_down,cmap_exp_signature))
 }
 
-rand_cmap_scores = random_cmap_scores 
+rand_cmap_scores <- random_cmap_scores 
 save(rand_cmap_scores,file=paste(subset_comparison_id, '/drug/',subset_comparison_id,'_',analysis_id,"_", landmark, '_randoms.RData',sep=""))
 
