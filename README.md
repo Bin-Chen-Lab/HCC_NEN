@@ -35,4 +35,4 @@ Identify genes reversed by the drugs
 
 3) run workflow.R in each component.
 
-Contact Bin Chen (bin.chen@ucsf.edu) for any questions.
+Contact Bin Chen (binchengroup@gmail.com) for any questions.
